@@ -1,3 +1,9 @@
+import sys
+import types
+
+# Trick to avoid audioop import error on Render (no audio support)
+sys.modules['audioop'] = types.ModuleType('audioop')
+
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -11,7 +17,7 @@ load_dotenv()  # NEW
 TOKEN = os.getenv("DISCORD_TOKEN")  # NEW
 
 if TOKEN is None:
-    print("? Error: DISCORD_TOKEN not found in .env")
+    print("❌ Error: DISCORD_TOKEN not found in .env")
     exit()
 
 intents = discord.Intents.default()
@@ -92,7 +98,7 @@ def get_member_by_name_or_mention(ctx, name: str):
 async def warn(ctx, member_name: str, *, reason: str = "No reason provided"):
     member = get_member_by_name_or_mention(ctx, member_name)
     if not member:
-        await ctx.send("?? Member not found.")
+        await ctx.send("⚠️ Member not found.")
         return
 
     warns[str(member.id)] = warns.get(str(member.id), 0) + 1
@@ -101,7 +107,7 @@ async def warn(ctx, member_name: str, *, reason: str = "No reason provided"):
     try:
         await member.timeout(timedelta(minutes=30), reason=reason)
     except discord.Forbidden:
-        await ctx.send("? I don't have permission to timeout that member.")
+        await ctx.send("❌ I don't have permission to timeout that member.")
         return
 
     embed = build_embed(
@@ -120,12 +126,12 @@ async def warn(ctx, member_name: str, *, reason: str = "No reason provided"):
 async def kick(ctx, member_name: str, *, reason: str = "No reason provided"):
     member = get_member_by_name_or_mention(ctx, member_name)
     if not member:
-        await ctx.send("?? Member not found.")
+        await ctx.send("⚠️ Member not found.")
         return
     try:
         await member.kick(reason=reason)
     except discord.Forbidden:
-        await ctx.send("? I don't have permission to kick that member.")
+        await ctx.send("❌ I don't have permission to kick that member.")
         return
     embed = build_embed(
         "User Kicked",
@@ -141,12 +147,12 @@ async def kick(ctx, member_name: str, *, reason: str = "No reason provided"):
 async def ban(ctx, member_name: str, *, reason: str = "No reason provided"):
     member = get_member_by_name_or_mention(ctx, member_name)
     if not member:
-        await ctx.send("?? Member not found.")
+        await ctx.send("⚠️ Member not found.")
         return
     try:
         await member.ban(reason=reason)
     except discord.Forbidden:
-        await ctx.send("? I don't have permission to ban that member.")
+        await ctx.send("❌ I don't have permission to ban that member.")
         return
     embed = build_embed(
         "User Banned",
@@ -162,12 +168,12 @@ async def ban(ctx, member_name: str, *, reason: str = "No reason provided"):
 async def timeout(ctx, member_name: str, minutes: int):
     member = get_member_by_name_or_mention(ctx, member_name)
     if not member:
-        await ctx.send("?? Member not found.")
+        await ctx.send("⚠️ Member not found.")
         return
     try:
         await member.timeout(timedelta(minutes=minutes))
     except discord.Forbidden:
-        await ctx.send("? I don't have permission to timeout that member.")
+        await ctx.send("❌ I don't have permission to timeout that member.")
         return
     embed = build_embed(
         "User Timed Out",
@@ -190,7 +196,7 @@ async def warn_slash(interaction: discord.Interaction, user: discord.Member, rea
     try:
         await user.timeout(timedelta(minutes=30), reason=reason)
     except discord.Forbidden:
-        await interaction.response.send_message("? I don't have permission to timeout that member.", ephemeral=True)
+        await interaction.response.send_message("❌ I don't have permission to timeout that member.", ephemeral=True)
         return
 
     embed = build_embed(
@@ -211,7 +217,7 @@ async def kick_slash(interaction: discord.Interaction, user: discord.Member, rea
     try:
         await user.kick(reason=reason)
     except discord.Forbidden:
-        await interaction.response.send_message("? I don't have permission to kick that member.", ephemeral=True)
+        await interaction.response.send_message("❌ I don't have permission to kick that member.", ephemeral=True)
         return
 
     embed = build_embed(
@@ -230,7 +236,7 @@ async def ban_slash(interaction: discord.Interaction, user: discord.Member, reas
     try:
         await user.ban(reason=reason)
     except discord.Forbidden:
-        await interaction.response.send_message("? I don't have permission to ban that member.", ephemeral=True)
+        await interaction.response.send_message("❌ I don't have permission to ban that member.", ephemeral=True)
         return
 
     embed = build_embed(
@@ -249,7 +255,7 @@ async def timeout_slash(interaction: discord.Interaction, user: discord.Member, 
     try:
         await user.timeout(timedelta(minutes=minutes))
     except discord.Forbidden:
-        await interaction.response.send_message("? I don't have permission to timeout that member.", ephemeral=True)
+        await interaction.response.send_message("❌ I don't have permission to timeout that member.", ephemeral=True)
         return
 
     embed = build_embed(
@@ -267,20 +273,20 @@ async def timeout_slash(interaction: discord.Interaction, user: discord.Member, 
 async def modlog_set(interaction: discord.Interaction, channel: discord.TextChannel):
     modlog_channels[str(interaction.guild.id)] = channel.id
     save_modlogs()
-    await interaction.response.send_message(f"? Modlog channel set to {channel.mention}")
+    await interaction.response.send_message(f"✅ Modlog channel set to {channel.mention}")
 
 @tree.command(name="modlog_get", description="Get the modlog channel")
 @commands.has_permissions(administrator=True)
 async def modlog_get(interaction: discord.Interaction):
     channel_id = modlog_channels.get(str(interaction.guild.id))
     if not channel_id:
-        await interaction.response.send_message("?? No modlog channel set.")
+        await interaction.response.send_message("⚠️ No modlog channel set.")
         return
     channel = interaction.guild.get_channel(channel_id)
     if channel:
-        await interaction.response.send_message(f"?? Modlog channel is {channel.mention}")
+        await interaction.response.send_message(f"📢 Modlog channel is {channel.mention}")
     else:
-        await interaction.response.send_message("?? The modlog channel set no longer exists.")
+        await interaction.response.send_message("⚠️ The modlog channel set no longer exists.")
 
 # ---------- INTRODUCTION ON MENTION WITH COOLDOWN ----------
 
@@ -316,19 +322,20 @@ async def on_message(message):
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
-        await ctx.send("? You don't have permission to use this command.")
+        await ctx.send("❌ You don't have permission to use this command.")
     elif isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("?? Missing required argument.")
+        await ctx.send("⚠️ Missing required argument.")
     elif isinstance(error, commands.CommandNotFound):
         pass
     else:
-        await ctx.send(f"?? Error: {error}")
+        await ctx.send(f"⚠️ Error: {error}")
 
 @tree.error
 async def on_app_command_error(interaction: discord.Interaction, error):
     if isinstance(error, app_commands.MissingPermissions):
-        await interaction.response.send_message("? You don't have permission to use this command.", ephemeral=True)
+        await interaction.response.send_message("❌ You don't have permission to use this command.", ephemeral=True)
     else:
-        await interaction.response.send_message(f"?? Error: {error}", ephemeral=True)
+        await interaction.response.send_message(f"⚠️ Error: {error}", ephemeral=True)
 
 bot.run(TOKEN)
+
