@@ -1,6 +1,7 @@
 import sys
 import types
 import os 
+import threading
 
 # === AUDIOOP PATCH ===
 # Trick to avoid audioop import error on Render (no audio support)
